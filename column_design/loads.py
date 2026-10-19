@@ -238,7 +238,7 @@ def combos_thai_usd(wind: bool = True, seismic: bool = True) -> list[Combo]:
 
 
 def combos_aci_318_25(wind: bool = True, seismic: bool = True) -> list[Combo]:
-    """ACI 318-25 Table 5.3.1 (ASCE 7 strength) — ใช้เปรียบเทียบ/เมื่อมีเอกสารรับรองตามข้อ 5"""
+    """ACI 318-19 Table 5.3.1 (ASCE 7 strength) — ใช้เปรียบเทียบ/เมื่อมีเอกสารรับรองตามข้อ 5"""
     out = [Combo("A1", {"D": 1.4}, "5.3.1a"), Combo("A2", {"D": 1.2, "L": 1.6}, "5.3.1b")]
     if wind:
         i = 0
@@ -295,7 +295,7 @@ def combos_thai_asd(wind: bool = True, seismic: bool = True) -> list[Combo]:
 @dataclass
 class LoadCase:
     """แรงในเสาจากแต่ละ load case (P อัดเป็นบวก, kN / kN·m)
-    M_top/M_bot ใช้สำหรับหา M1, M2 ในการขยายโมเมนต์ (ACI 318-25 6.6.4)"""
+    M_top/M_bot ใช้สำหรับหา M1, M2 ในการขยายโมเมนต์ (ACI 318-19 6.6.4)"""
     P: float = 0.0
     Mx_top: float = 0.0
     Mx_bot: float = 0.0

@@ -1,4 +1,4 @@
-"""กำลังเสาคอนกรีตเสริมเหล็กตาม ACI 318-25 (หน่วย SI: N, mm, MPa)
+"""กำลังเสาคอนกรีตเสริมเหล็กตาม ACI 318-19 (หน่วย SI: N, mm, MPa)
 
 - กำลังรับแรงอัดร่วมแรงดัดสองแกน: strain compatibility + Whitney stress block
   (22.2.1–22.2.2) บนตาราง fiber ของคอนกรีต พร้อมการหมุนแกนสะเทิน
@@ -6,7 +6,7 @@
 - ความชะลูด/การขยายโมเมนต์ระบบไม่เซ (6.2.5, 6.6.4)
 - แรงเฉือน (22.5) และข้อกำหนดการเสริมเหล็ก (10.6, 10.7, 25.7)
 
-ชุดตัวคูณ φ เลือกได้: กฎกระทรวง 2566 ข้อ 8 (คู่กับ 1.4D+1.7L) หรือ ACI 318-25 Table 21.2.2
+ชุดตัวคูณ φ เลือกได้: กฎกระทรวง 2566 ข้อ 8 (คู่กับ 1.4D+1.7L) หรือ ACI 318-19 Table 21.2.2
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def bar_area(db: float) -> float:
 
 
 def beta1(fc: float) -> float:
-    """ACI 318-25 Table 22.2.2.4.3"""
+    """ACI 318-19 Table 22.2.2.4.3"""
     if fc <= 28:
         return 0.85
     if fc >= 55:
@@ -52,7 +52,7 @@ class PhiSet:
 
 PHI_THAI_QC = PhiSet("กฎกระทรวง 2566 ข้อ 8 (มีการระบุมาตรฐาน/ควบคุมคุณภาพ)", 0.70, 0.75, 0.90, 0.85)
 PHI_THAI_NOQC = PhiSet("กฎกระทรวง 2566 ข้อ 8 (ไม่มีการระบุ)", 0.60, 0.625, 0.75, 0.70)
-PHI_ACI = PhiSet("ACI 318-25 Table 21.2.2 / 21.2.1", 0.65, 0.75, 0.90, 0.75)
+PHI_ACI = PhiSet("ACI 318-19 Table 21.2.2 / 21.2.1", 0.65, 0.75, 0.90, 0.75)
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +90,7 @@ class Section:
 
     @property
     def fy_design(self) -> float:
-        # ACI 318-25 Table 20.2.2.4(a) และประกาศ มท. 29(5)(ค): ไม่เกิน 550 MPa
+        # ประกาศ มท. 29(5)(ค): ไม่เกิน 550 MPa (ACI 318-19 Table 20.2.2.4(a) ยอมให้ถึง 690)
         return min(self.fy, 550.0)
 
     def Ig(self, axis: str) -> float:
@@ -311,7 +311,7 @@ def uniaxial_curve(surf: Surface, axis: str) -> dict[str, np.ndarray]:
 
 
 # ---------------------------------------------------------------------------
-# Slenderness — ACI 318-25 6.2.5 / 6.6.4 (ระบบไม่เซ)
+# Slenderness — ACI 318-19 6.2.5 / 6.6.4 (ระบบไม่เซ)
 # ---------------------------------------------------------------------------
 @dataclass
 class SlenderResult:
@@ -376,7 +376,7 @@ def slenderness(sec: Section, axis: str, Pu: float, M_top: float, M_bot: float,
 
 
 # ---------------------------------------------------------------------------
-# Shear — ACI 318-25 22.5
+# Shear — ACI 318-19 22.5
 # ---------------------------------------------------------------------------
 @dataclass
 class ShearResult:
@@ -437,7 +437,7 @@ def shear_check(sec: Section, direction: str, Vu: float, Nu: float, s: float,
 
 
 # ---------------------------------------------------------------------------
-# Detailing — ACI 318-25 10.6, 10.7, 25.7 + ประกาศ มท. 2567 ข้อ 29(11)
+# Detailing — ACI 318-19 10.6, 10.7, 25.7 + ประกาศ มท. 2567 ข้อ 29(11)
 # ---------------------------------------------------------------------------
 @dataclass
 class Check:
@@ -487,16 +487,15 @@ def detailing_checks(sec: Section, s_tie: float) -> list[Check]:
     if sec.spiral:
         dch = sec.b - 2 * sec.cover
         Ach = math.pi * dch ** 2 / 4
-        rho_s_req = max(0.45 * (sec.Ag / Ach - 1) * sec.fc / sec.fyt,
-                        0.12 * sec.fc / sec.fyt)                          # 25.7.3.3
+        rho_s_req = 0.45 * (sec.Ag / Ach - 1) * sec.fc / min(sec.fyt, 690.0)  # Eq. 25.7.3.3
         rho_s = 4 * bar_area(sec.dt) / (dch * s_tie)
         out.append(Check("ρs เหล็กปลอกเกลียว", f"{rho_s:.4f}", f"≥ {rho_s_req:.4f}",
                          rho_s >= rho_s_req, "ACI 25.7.3.3"))
         clr = s_tie - sec.dt
         out.append(Check("ระยะช่องว่างปลอกเกลียว", f"{clr:.0f} mm", "25 – 75 mm",
                          25 <= clr <= 75, "ACI 25.7.3.1 / มท. 29(11)(จ)2)ค)"))
-        out.append(Check("ขนาดเหล็กปลอกเกลียว", f"{sec.dt:.0f} mm", "≥ 10 mm (ACI) / ≥ 6 mm (มท.)",
-                         sec.dt >= 10, "ACI 25.7.3.2"))
+        out.append(Check("ขนาดเหล็กปลอกเกลียว", f"{sec.dt:.0f} mm", "≥ 9.5 mm (ACI) / ≥ 6 mm (มท.)",
+                         sec.dt >= 9.5, "ACI 25.7.3.2 / มท. 29(11)(จ)2)ข)"))
     else:
         tmin = min_tie_size(sec.db)
         out.append(Check("ขนาดเหล็กปลอก", f"{sec.dt:.0f} mm", f"≥ {tmin:.0f} mm",

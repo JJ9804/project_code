@@ -1,4 +1,4 @@
-"""Streamlit — ออกแบบเสาคอนกรีตเสริมเหล็ก ACI 318-25 + น้ำหนักบรรทุกตามกฎกระทรวง 2566
+"""Streamlit — ออกแบบเสาคอนกรีตเสริมเหล็ก ACI 318-19 + น้ำหนักบรรทุกตามกฎกระทรวง 2566
 
 รัน:  streamlit run app.py
 """
@@ -14,7 +14,7 @@ import streamlit as st
 from column_design import aci_column as ac
 from column_design import loads as ld
 
-st.set_page_config(page_title="ออกแบบเสา คสล. ACI 318-25", page_icon="🏛️", layout="wide")
+st.set_page_config(page_title="ออกแบบเสา คสล. ACI 318-19", page_icon="🏛️", layout="wide")
 
 KSC_PER_MPA = 10.197
 
@@ -22,7 +22,7 @@ KSC_PER_MPA = 10.197
 # Sidebar — เกณฑ์การออกแบบ
 # ---------------------------------------------------------------------------
 st.sidebar.title("🏛️ ออกแบบเสา คสล.")
-st.sidebar.caption("ACI 318-25 (กำลัง) + กฎกระทรวงออกแบบโครงสร้างอาคาร พ.ศ. 2566 / ประกาศ มท. 2567")
+st.sidebar.caption("ACI 318-19 (กำลัง) + กฎกระทรวงออกแบบโครงสร้างอาคาร พ.ศ. 2566 / ประกาศ มท. 2567")
 
 project = st.sidebar.text_input("ชื่อโครงการ", "โครงการตัวอย่าง")
 col_mark = st.sidebar.text_input("ชื่อเสา", "C1")
@@ -30,14 +30,14 @@ col_mark = st.sidebar.text_input("ชื่อเสา", "C1")
 st.sidebar.subheader("เกณฑ์การออกแบบ")
 combo_set = st.sidebar.radio(
     "Load combination",
-    ["กฎกระทรวง 2566 ข้อ 7 (1.4D+1.7L)", "ACI 318-25 Table 5.3.1 (1.2D+1.6L)"],
+    ["กฎกระทรวง 2566 ข้อ 7 (1.4D+1.7L)", "ACI 318-19 Table 5.3.1 (1.2D+1.6L)"],
     help="ค่าตั้งต้นตามกฎกระทรวง 2566 ข้อ 7; ชุด ACI ใช้ได้เมื่อมีเอกสารรับรองตามข้อ 5 วรรคสอง",
 )
 thai_combo = combo_set.startswith("กฎกระทรวง")
 phi_opts = {
     "กฎกระทรวง ข้อ 8 — มีการระบุมาตรฐาน/ควบคุมคุณภาพ": ac.PHI_THAI_QC,
     "กฎกระทรวง ข้อ 8 — ไม่มีการระบุ": ac.PHI_THAI_NOQC,
-    "ACI 318-25 Table 21.2.2": ac.PHI_ACI,
+    "ACI 318-19 Table 21.2.2": ac.PHI_ACI,
 }
 default_phi = 0 if thai_combo else 2
 phi_key = st.sidebar.selectbox("ตัวคูณลดกำลัง φ", list(phi_opts), index=default_phi)
@@ -51,7 +51,7 @@ use_wind = st.sidebar.checkbox("รวมแรงลม (Wx, Wy)", True)
 use_eq = st.sidebar.checkbox("รวมแรงแผ่นดินไหว (Ex, Ey)", False)
 if use_eq:
     st.sidebar.info("แรง E ระดับกำลัง (มยผ.1301/1302-61). เสาในระบบต้านแผ่นดินไหวต้องตรวจ detailing "
-                    "ตาม ACI 318-25 บทที่ 18 เพิ่มเติม (โปรแกรมนี้ไม่ครอบคลุม)")
+                    "ตาม ACI 318-19 บทที่ 18 เพิ่มเติม (โปรแกรมนี้ไม่ครอบคลุม)")
 
 combos = (ld.combos_thai_usd(use_wind, use_eq) if thai_combo
           else ld.combos_aci_318_25(use_wind, use_eq))
@@ -299,7 +299,7 @@ with tab_design:
         s_tie = s2.number_input("ระยะเรียงปลอก (mm)", 25.0, 600.0,
                                 float(min(ac.auto_spacing_tie(sec0), 200.0)) if not spiral else 60.0, 5.0)
 
-        st.subheader("ความชะลูด (ACI 318-25 6.2.5 / 6.6.4)")
+        st.subheader("ความชะลูด (ACI 318-19 6.2.5 / 6.6.4)")
         k1, k2, k3 = st.columns(3)
         lu_x = k1.number_input("ℓu ดัดรอบแกน x (m)", 0.5, 30.0, 3.2, 0.1) * 1000
         lu_y = k1.number_input("ℓu ดัดรอบแกน y (m)", 0.5, 30.0, 3.2, 0.1) * 1000
@@ -402,7 +402,7 @@ with tab_design:
         p3.plotly_chart(fig, width="stretch")
 
     # Shear
-    st.subheader("แรงเฉือน (ACI 318-25 22.5, 10.7.6.5)")
+    st.subheader("แรงเฉือน (ACI 318-19 22.5, 10.7.6.5)")
     sh_rows = []
     worst_sh = 0.0
     for f in forces:
@@ -483,7 +483,7 @@ with tab_report:
             f"**โครงการ:** {project}",
             "",
             "## เกณฑ์การออกแบบ",
-            "- มาตรฐานกำลัง: ACI 318-25 (strain compatibility, stress block 0.85f'c·β1c)",
+            "- มาตรฐานกำลัง: ACI 318-19 (strain compatibility, stress block 0.85f'c·β1c)",
             f"- Load combination: {combo_set}",
             f"- ตัวคูณลดกำลัง: {phis.name} — ปลอกเดี่ยว {phis.tied}, ปลอกเกลียว {phis.spiral}, "
             f"ดัด {phis.tension}, เฉือน {phis.shear}",
@@ -515,7 +515,7 @@ with tab_report:
             "",
             f"## สรุป: {'✅ ผ่านเกณฑ์ทุกข้อ' if overall else '❌ ไม่ผ่าน — ต้องแก้ไข'}",
             "",
-            "> หมายเหตุ: โปรแกรมไม่ครอบคลุม detailing ระบบต้านแผ่นดินไหว (ACI 318-25 บทที่ 18), "
+            "> หมายเหตุ: โปรแกรมไม่ครอบคลุม detailing ระบบต้านแผ่นดินไหว (ACI 318-19 บทที่ 18), "
             "การต่อทาบ/ระยะฝัง และการวิเคราะห์โครงสร้าง — วิศวกรผู้ออกแบบต้องตรวจสอบและรับรองผลเอง",
         ]
         md = "\n".join(lines)
